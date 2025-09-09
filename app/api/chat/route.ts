@@ -5,6 +5,12 @@ import { PromptTemplate } from '@langchain/core/prompts'
 import { Citation } from '@/types/chat'
 import { config, validateConfig } from '@/lib/config'
 import { defaultRateLimit } from '@/lib/rateLimit'
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+const proxyAgent = new HttpsProxyAgent('http://14acbeebb9918:690d36e361@185.124.56.14:12323');
+const clientConfig = {
+  httpAgent: proxyAgent,
+}
 
 // Validate configuration
 validateConfig()
@@ -19,15 +25,15 @@ const pinecone = new Pinecone({
 const embeddings = new OpenAIEmbeddings({
   openAIApiKey: config.openai.apiKey,
   modelName: 'text-embedding-3-large',
-})
-
+},
+  clientConfig)
+console.log(config.openai.model)
 // Initialize OpenAI chat model with optimized parameters
 const chatModel = new ChatOpenAI({
   openAIApiKey: config.openai.apiKey,
-  modelName: config.openai.model,
-  temperature: 0.3, // Optimized for consistent, structured output
-  maxTokens: 4000, // Ample tokens for detailed responses
-})
+  modelName: config.openai.model
+},
+  clientConfig)
 
 // Get Pinecone index
 const getIndex = async () => {
@@ -41,7 +47,7 @@ const createFilters = {
   bySource: (source: string) => ({
     source: { $eq: source }
   }),
-  
+
   // Filter by date range (if you have timestamp metadata)
   byDateRange: (startDate: string, endDate: string) => ({
     timestamp: {
@@ -49,7 +55,7 @@ const createFilters = {
       $lte: endDate
     }
   }),
-  
+
   // Filter by chunk index
   byChunkIndex: (minIndex: number, maxIndex: number) => ({
     chunkIndex: {
@@ -57,12 +63,12 @@ const createFilters = {
       $lte: maxIndex
     }
   }),
-  
+
   // Filter by file type
   byFileType: (fileType: string) => ({
     fileType: { $eq: fileType }
   }),
-  
+
   // Combine multiple filters
   combine: (...filters: any[]) => {
     const combined: any = {}
@@ -87,27 +93,27 @@ const createFilters = {
 }
 
 // Search for relevant documents with enhanced retrieval
-const searchDocuments = async (query: string, topK: number = 10, filters?: any) => {
+const searchDocuments = async (query: string, topK: number = 5, filters?: any) => {
   const index = await getIndex()
-  
+
   // Create query embedding
   const queryEmbedding = await embeddings.embedQuery(query)
-  
+
   // Build query parameters
   const queryParams: any = {
     vector: queryEmbedding,
     topK,
     includeMetadata: true,
   }
-  
+
   // Only add filter if it has valid conditions
   if (filters && Object.keys(filters).length > 0) {
     queryParams.filter = filters
   }
-  
+
   // Search in Pinecone with enhanced parameters
   const searchResponse = await index.query(queryParams)
-  
+
   return searchResponse.matches || []
 }
 
@@ -116,9 +122,9 @@ const createContext = (matches: any[]) => {
   if (matches.length === 0) {
     return "No relevant documents found in the knowledge base."
   }
-  
+
   let context = "Retrieved Context:\n\n"
-  
+
   matches.forEach((match, index) => {
     const metadata = match.metadata
     const score = match.score ? ` (Score: ${match.score.toFixed(3)})` : ''
@@ -131,7 +137,7 @@ const createContext = (matches: any[]) => {
     }
     context += `Content: ${metadata.text}\n\n`
   })
-  
+
   return context
 }
 
@@ -176,42 +182,64 @@ const isAdSampleRequest = (query: string): boolean => {
 // Select prompt template based on request type
 const getPromptTemplate = (mode: 'default' | 'ad_samples') => {
   if (mode === 'ad_samples') {
-    return PromptTemplate.fromTemplate(`
+  //   return PromptTemplate.fromTemplate(`
 
-      {question}
-      Please just refer to the following context:
-      {context}
+  //       {question}
+  //       Please just refer to the following context:
+  //       {context}
 
-Remember: Always return including the citations in your response:
-   **Citations**: List of sources used
+  // Remember: Always return including the citations in your response:
+  //   **Citations**: List of sources used
 
-Output:
-`)
+  // Output:
+  // `)
+      return PromptTemplate.fromTemplate(`
+        You are helpful assistant.
+        You can refer the following context to answer user question:
+        {context}
+        
+        Don't rely too heavily on the given context. Use your existing knowledge and use the context as a reference.
+
+        User:{question}
+        Your Answer:
+  `)
   } else {
 
+    // return PromptTemplate.fromTemplate(`
+    //   You are a helpful AI assistant that answers questions based on the provided context from uploaded documents.
+
+    //   Context:
+    //   {context}
+
+    //   User Question: {question}
+
+    //   KNOWLEDGE PRECEDENCE POLICY:
+    //   1. **Precedence Rule**: Use retrieved context first. Cite inline using [1], [2], etc. If coverage is weak, say so and add a labeled 'General Best Practices' section.
+
+    //   2. **Conflict Rule**: If KB advice conflicts with general knowledge, prefer KB unless it's clearly outdated or unsafe. Then, state the exception and why.
+
+    //   3. **Attribution Rule**: Whenever KB is used, cite sources (creator, title, date/URL). This builds trust and protects IP.
+
+    //   Instructions:
+    //   1. Answer the question based on the information provided in the context
+    //   2. If the context doesn't contain enough information, acknowledge this and provide general best practices
+    //   3. Use inline citations [1], [2], etc. to reference specific sources
+    //   Remember: Always return including the citations in your response:
+    //     **Citations**: List of sources used
+
+    //   Answer:
+    //   `)
     return PromptTemplate.fromTemplate(`
-      You are a helpful AI assistant that answers questions based on the provided context from uploaded documents.
+        You are helpful assistant.
+        You can refer the following context to answer user question:
+        {context}
+        
 
-      Context:
-      {context}
+        Don't rely too heavily on the given context. Use your existing knowledge and use the context as a reference.
 
-      User Question: {question}
-
-      KNOWLEDGE PRECEDENCE POLICY:
-      1. **Precedence Rule**: Use retrieved context first. Cite inline using [1], [2], etc. If coverage is weak, say so and add a labeled 'General Best Practices' section.
-
-      2. **Conflict Rule**: If KB advice conflicts with general knowledge, prefer KB unless it's clearly outdated or unsafe. Then, state the exception and why.
-
-      3. **Attribution Rule**: Whenever KB is used, cite sources (creator, title, date/URL). This builds trust and protects IP.
-
-      Instructions:
-      1. Answer the question based on the information provided in the context
-      2. If the context doesn't contain enough information, acknowledge this and provide general best practices
-      3. Use inline citations [1], [2], etc. to reference specific sources
-      Remember: Always return including the citations in your response:
-        **Citations**: List of sources used
-
-      Answer:
+        
+        User:{question}
+        Your Answer:
       `)
   }
 }
@@ -223,8 +251,8 @@ const generateResponse = async (query: string, context: string, mode: 'default' 
   const formattedPrompt = await promptTemplate.format({
     context,
     question: query,
-  })
-
+      })
+      
   const response = await chatModel.predict(formattedPrompt)
   return response
 }
@@ -252,7 +280,7 @@ export async function POST(request: NextRequest) {
     const historyText = messages.map((msg: any) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`).join('\n')
     // Use the last user message as the main query
     const lastUserMsg = [...messages].reverse().find((msg: any) => msg.role === 'user')?.content || ''
-    
+
     // Example: You can now use filters like this:
     // const filters = createFilters.bySource('specific-document.pdf')
     // const filters = createFilters.byFileType('application/pdf')
@@ -260,18 +288,18 @@ export async function POST(request: NextRequest) {
     //   createFilters.bySource('document.pdf'),
     //   createFilters.byChunkIndex(0, 5)
     // )
-    
-  // Search for relevant documents using the full history
-  const matches = await searchDocuments(historyText)
-  // Create context from search results
-  const context = createContext(matches)
-  // Detect ad-sample intent and generate response with appropriate prompt
-  const mode = isAdSampleRequest(lastUserMsg) ? 'ad_samples' : 'default'
-  const response = await generateResponse(historyText, context, mode)
-    
+
+    // Search for relevant documents using the full history
+    const matches = await searchDocuments(historyText)
+    // Create context from search results
+    const context = createContext(matches)
+    // Detect ad-sample intent and generate response with appropriate prompt
+    const mode = isAdSampleRequest(lastUserMsg) ? 'ad_samples' : 'default'
+    const response = await generateResponse(historyText, context, mode)
+
     // Create citations
     const citations = createCitations(matches)
-    
+
     // Log evaluation metrics for tuning
     const evaluationMetrics = {
       query: lastUserMsg,
@@ -284,20 +312,20 @@ export async function POST(request: NextRequest) {
       responseLength: response.length,
       mode: mode
     }
-    
+
     console.log('Evaluation Metrics:', JSON.stringify(evaluationMetrics, null, 2))
-    
+
     return NextResponse.json({
       response,
       citations,
       context: context.substring(0, 200) + '...', // For debugging
       metrics: evaluationMetrics
     })
-    
+
   } catch (error) {
     console.error('Chat error:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to process chat message',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

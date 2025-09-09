@@ -26,7 +26,7 @@ interface Config {
 const config: Config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
-    model: process.env.OPENAI_MODEL || 'gpt-4o',
+    model: process.env.OPENAI_MODEL || 'gpt-5',
     temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.7'),
   },
   pinecone: {
