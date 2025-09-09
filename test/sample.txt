@@ -1,0 +1,49 @@
+AI Chatbot Development Roadmap
+
+This document outlines the proposed roadmap for developing a custom GPT-powered chatbot with a knowledge base. The project is divided into five phases, each building upon the previous one.
+
+Phase 1 – Prototype (1.5–2 weeks, $1.5k–$2k range)
+- File upload (.txt, .pdf) → embeddings (Pinecone)
+- Categorization & metadata tagging
+- Simple web chat UI (Next.js)
+- Retrieval + GPT responses with citations
+- Deployed prototype (cloud or local)
+
+Goal: Validate workflow & prove concept
+
+Phase 2 – SaaS MVP (2–3 weeks, ~$2k–$3k)
+- User Accounts & Auth (email/OAuth login)
+- Persistent Chat History tied to user profiles
+- Basic Subscription/Paywall (Stripe integration, one paid plan)
+- Admin Dashboard for file uploads + knowledge base management
+- Light Analytics: usage stats, token spend per user
+- Personalization (v1): track user interests & influence retrieval
+
+Goal: First usable SaaS app with paying users
+
+Phase 3 – Advanced Ingestion & Features (3–3.5 weeks, ~$3k–$4k)
+- Support More Formats: DOCX, URLs, web articles
+- YouTube/Audio Ingestion: automatic transcription → embeddings
+- Improved Categorization: hybrid GPT + clustering model for consistency
+- Enhanced Source Referencing: richer citation UI, filters by source/author
+- Role-Based Access Control (RBAC) for orgs/teams
+
+Goal: Broader ingestion, more robust knowledge base, enterprise-ready features starting to emerge
+
+Phase 4 – Production Hardening & Launch Prep (2–3 weeks, ~$2k–$3k)
+- Multi-Tenancy Support: orgs, workspaces, and roles
+- Tiered Subscriptions: multiple plans, quotas, usage metering
+- Security & Compliance: encrypted storage, PII redaction, audit logs
+- Observability: monitoring, alerts, logging
+- Scalable Deployment (AWS/GCP + autoscaling)
+- UX Polish: optimized chat UI, responsive design, onboarding flows
+
+Goal: SaaS product stable and secure for public launch
+
+Phase 5 – Growth & Personalization (ongoing, modular pricing)
+- Advanced Analytics: user insights, org dashboards
+- Deep Personalization: adaptive ranking, long-term interest models
+- Marketplace/API: allow customers to connect external data sources
+- Mobile Support (optional)
+
+This roadmap provides a clear path from prototype to production-ready SaaS application, with each phase delivering incremental value while building toward a comprehensive AI-powered knowledge management solution.

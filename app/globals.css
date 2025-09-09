@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer components {
+  .chat-message {
+    @apply p-4 rounded-lg mb-4;
+  }
+  
+  .user-message {
+    @apply bg-blue-100 border-l-4 border-blue-500;
+  }
+  
+  .assistant-message {
+    @apply bg-gray-100 border-l-4 border-gray-500;
+  }
+  
+  .citation {
+    @apply text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded border;
+  }
+}
