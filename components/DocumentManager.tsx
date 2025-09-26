@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Trash2, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
-
+import axios from "axios"
 interface Document {
   fileName: string
   chunkCount: number
@@ -28,15 +28,13 @@ export default function DocumentManager({ onDocumentsChange }: DocumentManagerPr
   const fetchDocuments = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/delete', {
-        method: 'GET'
-      })
-      
-      if (!response.ok) {
+      const response = await axios.get('/api/delete', { headers: { "Cache-Control": "no-cache" } })
+
+      if (!response.status) {
         throw new Error('Failed to fetch documents')
       }
-      
-      const data = await response.json()
+
+      const data = await response.data
       setDocuments(data.documents || [])
     } catch (error) {
       console.error('Error fetching documents:', error)
@@ -49,21 +47,15 @@ export default function DocumentManager({ onDocumentsChange }: DocumentManagerPr
   const deleteDocument = async (fileName: string) => {
     try {
       setDeleteLoading(fileName)
-      const response = await fetch('/api/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ fileName }),
-      })
-      
-      if (!response.ok) {
+      const response = await axios.delete('/api/delete', { data: { fileName } })
+
+      if (response.status != 200) {
         throw new Error('Failed to delete document')
       }
-      
-      const data = await response.json()
+
+      const data = await response.data
       setMessage({ type: 'success', text: data.message })
-      
+
       // Refresh documents list
       await fetchDocuments()
       onDocumentsChange()
@@ -78,21 +70,14 @@ export default function DocumentManager({ onDocumentsChange }: DocumentManagerPr
   const deleteAllDocuments = async () => {
     try {
       setDeleteLoading('all')
-      const response = await fetch('/api/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ deleteAll: true }),
-      })
-      
-      if (!response.ok) {
+      const response = await axios.delete('/api/delete', { data: { deleteAll: true } })
+      if (response.status != 200) {
         throw new Error('Failed to delete all documents')
       }
-      
-      const data = await response.json()
+
+      const data = await response.data
       setMessage({ type: 'success', text: data.message })
-      
+
       // Refresh documents list
       await fetchDocuments()
       onDocumentsChange()
@@ -146,9 +131,8 @@ export default function DocumentManager({ onDocumentsChange }: DocumentManagerPr
 
       {/* Message Display */}
       {message && (
-        <div className={`mb-4 p-4 rounded-lg flex items-center justify-between ${
-          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`mb-4 p-4 rounded-lg flex items-center justify-between ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           <div className="flex items-center">
             {message.type === 'success' ? (
               <CheckCircle className="mr-2 h-5 w-5" />

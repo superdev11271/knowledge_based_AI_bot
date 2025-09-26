@@ -21,7 +21,7 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   const handleFileUpload = useCallback(async (files: FileList) => {
-    const validFiles = Array.from(files).filter(file => 
+    const validFiles = Array.from(files).filter(file =>
       file.type === 'text/plain' || file.type === 'application/pdf'
     )
 
@@ -32,7 +32,7 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
 
     for (const file of validFiles) {
       const fileId = Date.now().toString() + Math.random().toString(36).substr(2, 9)
-      
+
       const uploadedFile: UploadedFile = {
         id: fileId,
         name: file.name,
@@ -59,9 +59,9 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
         const data = await response.json()
 
         if (data.success) {
-          setUploadedFiles(prev => 
-            prev.map(f => 
-              f.id === fileId 
+          setUploadedFiles(prev =>
+            prev.map(f =>
+              f.id === fileId
                 ? { ...f, status: 'success', message: data.message || 'File uploaded and processed successfully' }
                 : f
             )
@@ -69,9 +69,9 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
           // Notify parent component of successful upload
           onUploadSuccess?.()
         } else {
-          setUploadedFiles(prev => 
-            prev.map(f => 
-              f.id === fileId 
+          setUploadedFiles(prev =>
+            prev.map(f =>
+              f.id === fileId
                 ? { ...f, status: 'error', message: data.message || 'Upload failed' }
                 : f
             )
@@ -79,9 +79,9 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
         }
       } catch (error) {
         console.error('Upload error:', error)
-        setUploadedFiles(prev => 
-          prev.map(f => 
-            f.id === fileId 
+        setUploadedFiles(prev =>
+          prev.map(f =>
+            f.id === fileId
               ? { ...f, status: 'error', message: error instanceof Error ? error.message : 'Upload failed' }
               : f
           )
@@ -123,6 +123,7 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
+  const disableUpload = uploadedFiles.length > 0 && !uploadedFiles.every(file => file.status === 'success')
 
   const getFileIcon = (type: string) => {
     return type === 'text/plain' ? <FileText className="w-4 h-4" /> : <File className="w-4 h-4" />
@@ -132,19 +133,25 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
     <div className="space-y-4">
       {/* Upload Area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          isDragOver 
-            ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        className={`border-2 rounded-lg p-6 text-center transition-colors
+    ${disableUpload
+            ? 'border-gray-200 bg-gray-100 cursor-not-allowed'
+            : isDragOver
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-dashed border-gray-300 hover:border-gray-400'
+          }`}
+        onDrop={disableUpload ? undefined : handleDrop}
+        onDragOver={disableUpload ? undefined : handleDragOver}
+        onDragLeave={disableUpload ? undefined : handleDragLeave}
       >
-        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-        <p className="text-sm text-gray-600 mb-2">
+        <Upload
+          className={`w-8 h-8 mx-auto mb-2 ${disableUpload ? 'text-gray-300' : 'text-gray-400'}`}
+        />
+        <p className={`text-sm mb-2 ${disableUpload ? 'text-gray-400' : 'text-gray-600'}`}>
           Drag and drop your files here, or{' '}
-          <label className="text-blue-500 hover:text-blue-700 cursor-pointer">
+          <label
+            className={`cursor-pointer ${disableUpload ? 'text-gray-400' : 'text-blue-500 hover:text-blue-700'}`}
+          >
             browse
             <input
               type="file"
@@ -152,13 +159,15 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
               accept=".txt,.pdf"
               onChange={handleFileInput}
               className="hidden"
+              disabled={disableUpload}
             />
           </label>
         </p>
-        <p className="text-xs text-gray-500">
-          Supported formats: .txt, .pdf (Max 10MB per file)
+        <p className={`text-xs ${disableUpload ? 'text-gray-400' : 'text-gray-500'}`}>
+          Supported formats: .txt, .pdf (Max 500MB per file)
         </p>
       </div>
+
 
       {/* Uploaded Files List */}
       {uploadedFiles.length > 0 && (
@@ -167,13 +176,12 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
           {uploadedFiles.map((file) => (
             <div
               key={file.id}
-              className={`flex items-center justify-between p-3 rounded-lg border ${
-                file.status === 'success' 
-                  ? 'border-green-200 bg-green-50' 
-                  : file.status === 'error'
+              className={`flex items-center justify-between p-3 rounded-lg border ${file.status === 'success'
+                ? 'border-green-200 bg-green-50'
+                : file.status === 'error'
                   ? 'border-red-200 bg-red-50'
                   : 'border-gray-200 bg-gray-50'
-              }`}
+                }`}
             >
               <div className="flex items-center space-x-2">
                 {getFileIcon(file.type)}
@@ -185,15 +193,14 @@ export default function FileUpload({ onUploadSuccess }: FileUploadProps) {
                     {formatFileSize(file.size)}
                   </p>
                   {file.message && (
-                    <p className={`text-xs ${
-                      file.status === 'success' ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <p className={`text-xs ${file.status === 'success' ? 'text-green-600' : 'text-red-600'
+                      }`}>
                       {file.message}
                     </p>
                   )}
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 {file.status === 'uploading' && (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>

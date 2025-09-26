@@ -7,11 +7,6 @@ import { config, validateConfig } from '@/lib/config'
 import { defaultRateLimit } from '@/lib/rateLimit'
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
-const proxyAgent = new HttpsProxyAgent('http://14acbeebb9918:690d36e361@185.124.56.14:12323');
-const clientConfig = {
-  httpAgent: proxyAgent,
-}
-
 // Validate configuration
 validateConfig()
 
@@ -25,15 +20,12 @@ const pinecone = new Pinecone({
 const embeddings = new OpenAIEmbeddings({
   openAIApiKey: config.openai.apiKey,
   modelName: 'text-embedding-3-large',
-},
-  clientConfig)
-console.log(config.openai.model)
+})
 // Initialize OpenAI chat model with optimized parameters
 const chatModel = new ChatOpenAI({
   openAIApiKey: config.openai.apiKey,
   modelName: config.openai.model
-},
-  clientConfig)
+})
 
 // Get Pinecone index
 const getIndex = async () => {

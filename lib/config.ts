@@ -35,7 +35,7 @@ const config: Config = {
     indexName: process.env.PINECONE_INDEX_NAME || 'ai-chatbot-index',
   },
   app: {
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '52428800'), // 50MB
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '524288000'), // 500MB
     chunkSize: parseInt(process.env.CHUNK_SIZE || '1000'),
     chunkOverlap: parseInt(process.env.CHUNK_OVERLAP || '200'),
     maxSearchResults: parseInt(process.env.MAX_SEARCH_RESULTS || '5'),

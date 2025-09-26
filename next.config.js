@@ -8,6 +8,10 @@ const nextConfig = {
   serverRuntimeConfig: {
     maxFileSize: '50mb', // Increased to 50MB
   },
+  devServer: {
+    host: '0.0.0.0', // Listen on all network interfaces
+    port: 3000, // Port for Next.js to listen to
+  },
 }
 
 module.exports = nextConfig
